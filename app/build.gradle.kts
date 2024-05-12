@@ -52,6 +52,10 @@ android {
 
 dependencies {
 
+
+    //implementation (libs.filament.android.utils)
+    //implementation(libs.google.filament.android)
+    implementation(libs.androidx.foundation)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
