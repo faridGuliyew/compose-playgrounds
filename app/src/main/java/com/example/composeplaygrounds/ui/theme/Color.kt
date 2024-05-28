@@ -13,3 +13,7 @@ val Pink40 = Color(0xFF7D5260)
 
 val RadarColor = Color(0xFF001b1a)
 val RadarColorGreen = Color(0xFF00fd00)
+
+
+val TetrisBoardPrimary = Color(0xFF9bad83)
+val TetrisNodePrimary = Color(0xFF889773)
