@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -30,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -49,14 +49,25 @@ class ItemState(
 ) {
     var offsetX by mutableIntStateOf(0)
     var offsetY by mutableIntStateOf(0)
-    var isSelected by mutableStateOf(false)
+
+    //isIdle - item is not dropped to the special area yet
+    private var isIdle by mutableStateOf(true)
+
+    //isCurrentlySelected - item is being dragged
+    var isCurrentlySelected by mutableStateOf(false)
+
+    //isInDropArea - item is dragged to the special area. If dropped, isIdle becomes false
     var isInDropArea by mutableStateOf(false)
 
-    fun reset() {
+    fun reset(
+        onIdleChanged: (isIdle: Boolean) -> Unit,
+    ) {
         offsetX = 0
         offsetY = 0
+        isIdle = isInDropArea.not()
+        onIdleChanged(isIdle)
         isInDropArea = false
-        isSelected = false
+        isCurrentlySelected = false
     }
 }
 
@@ -69,12 +80,15 @@ fun ReleaseToAdd() {
 
     val screenState = remember { ScreenState() }
     //demo items
-    val items = remember {
+    val idleItems = remember {
         mutableStateListOf(
             *(0..10).map {
                 ItemState(it)
             }.toTypedArray()
         )
+    }
+    val selectedItems = remember {
+        mutableStateListOf<ItemState>()
     }
     val config = LocalConfiguration.current
 
@@ -86,30 +100,39 @@ fun ReleaseToAdd() {
         LazyRow(
             modifier = Modifier.fillMaxSize()
         ) {
-            items(items = items) { item ->
+            items(items = idleItems) { item ->
                 InitialItem(item = item, selectedIndex = screenState.selectedItemIndex,
                     onSelect = {
                         screenState.selectedItemIndex = item.index
-                        item.isSelected = true
+                        item.isCurrentlySelected = true
                     }, onDeselected = {
                         screenState.selectedItemIndex = null
-                        item.reset()
+                        item.reset { isIdle ->
+                            if (isIdle) {
+//                                selectedItems.remove(item)
+//                                idleItems.add(item)
+                            } else {
+                                selectedItems.add(item)
+                                idleItems.remove(item)
+                            }
+                        }
                     }, areaToBeDropped = config.screenHeightDp.dp * 0.2f
                 )
                 Spacer(modifier = Modifier.width(6.dp))
             }
         }
         //drop area
-        if (screenState.selectedItemIndex != null) {
-            val pathPhase by rememberInfiniteTransition().animateFloat(
-                initialValue = 0f,
-                targetValue = 100f,
-                animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing)), label = ""
-            )
-            Box(modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .fillMaxHeight(0.6f)
-                .drawBehind {
+
+        val pathPhase by rememberInfiniteTransition().animateFloat(
+            initialValue = 0f,
+            targetValue = 100f,
+            animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing)), label = ""
+        )
+        Box(modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .fillMaxHeight(0.6f)
+            .drawBehind {
+                if (screenState.selectedItemIndex != null) {
                     drawRoundRect(
                         color = Color.Red, style = Stroke(
                             width = 2f,
@@ -119,8 +142,17 @@ fun ReleaseToAdd() {
                             )
                         )
                     )
-                }) {}
+                }
+            }) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(items = selectedItems) {
+                    Text(text = it.index.toString())
+                }
+            }
         }
+
     }
 }
 
@@ -140,9 +172,12 @@ fun InitialItem(
     )
 
     Box(modifier = Modifier
+        //FIXME demo
+        .width(if (item.isInDropArea) 200.dp else 80.dp)
         .graphicsLayer {
-            this.translationX = translationX + if (item.isSelected) item.offsetX.toFloat() else 0f
-            this.translationY = if (item.isSelected) item.offsetY.toFloat() else 0f
+            this.translationX =
+                translationX + if (item.isCurrentlySelected) item.offsetX.toFloat() else 0f
+            this.translationY = if (item.isCurrentlySelected) item.offsetY.toFloat() else 0f
         }
         .clip(CircleShape)
         .background(Color.Blue.copy(0.3f))
@@ -152,8 +187,16 @@ fun InitialItem(
                 translate(left = 16.dp.toPx(), top = -16.dp.toPx()) {
 
                     drawCircle(color = Color.Green, radius = 12.dp.toPx())
-                    drawLine(color = Color.Black, start = size.center.copy(x = size.center.x - 12.dp.toPx()), end = size.center.copy(x = size.center.x + 12.dp.toPx()),)
-                    drawLine(color = Color.Black, start = size.center.copy(y = size.center.y - 12.dp.toPx()), end = size.center.copy(y = size.center.y + 12.dp.toPx()),)
+                    drawLine(
+                        color = Color.Black,
+                        start = size.center.copy(x = size.center.x - 12.dp.toPx()),
+                        end = size.center.copy(x = size.center.x + 12.dp.toPx()),
+                    )
+                    drawLine(
+                        color = Color.Black,
+                        start = size.center.copy(y = size.center.y - 12.dp.toPx()),
+                        end = size.center.copy(y = size.center.y + 12.dp.toPx()),
+                    )
                 }
             }
         }
@@ -167,9 +210,10 @@ fun InitialItem(
             }, onDragEnd = {
                 onDeselected()
             })
-        }
+        }, contentAlignment = Alignment.Center
     ) {
-        Text(text = item.index.toString())
+        Text(
+            text = item.index.toString())
     }
 }
 
