@@ -52,7 +52,9 @@ android {
 
 dependencies {
 
+    implementation(kotlin("reflect"))
 
+    implementation(libs.lottie.compose)
     //implementation (libs.filament.android.utils)
     //implementation(libs.google.filament.android)
     implementation(libs.androidx.foundation)

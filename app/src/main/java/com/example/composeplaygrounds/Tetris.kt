@@ -43,6 +43,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import kotlin.reflect.full.primaryConstructor
 
 sealed class TetrisBlockType(
     val scope: CoroutineScope,
@@ -235,31 +236,8 @@ fun Tetris() {
     }
 
     fun getRandomChild(onPlaced: (TetrisBlockState) -> Unit) : TetrisBlockType {
-        return when (Random.nextInt(7)) {
-            0 -> {
-                TetrisBlockType.J(scope,  limit = Pair(colCount, rowCount), occupiedNodes =  occupiedNodes) { onPlaced(it) }
-            }
-            1 -> {
-                TetrisBlockType.L(scope, limit = Pair(colCount, rowCount), occupiedNodes =  occupiedNodes) { onPlaced(it) }
-            }
-            2 -> {
-                TetrisBlockType.I(scope,  limit = Pair(colCount, rowCount), occupiedNodes =  occupiedNodes)  { onPlaced(it) }
-            }
-            3 -> {
-                TetrisBlockType.O(scope,  limit = Pair(colCount, rowCount), occupiedNodes =  occupiedNodes) { onPlaced(it) }
-            }
-            4 -> {
-                TetrisBlockType.S(scope, limit = Pair(colCount, rowCount), occupiedNodes =  occupiedNodes) { onPlaced(it) }
-            }
-            5 -> {
-                TetrisBlockType.T(scope, limit = Pair(colCount, rowCount), occupiedNodes =  occupiedNodes) { onPlaced(it) }
-            }
-            6 -> {
-                TetrisBlockType.Z(scope,  limit = Pair(colCount, rowCount), occupiedNodes =  occupiedNodes) { onPlaced(it) }
-            }
-
-            else -> TetrisBlockType.O(scope, limit = Pair(colCount, rowCount), occupiedNodes =  occupiedNodes){}
-        }
+        val onPlacedProperty: (TetrisBlockState) -> Unit = onPlaced
+        return TetrisBlockType::class.nestedClasses.random().primaryConstructor?.call(scope, occupiedNodes, Pair(colCount, rowCount), onPlacedProperty) as TetrisBlockType
     }
 
     LaunchedEffect(key1 = activeTetrisBlock) {
