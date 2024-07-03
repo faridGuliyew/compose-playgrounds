@@ -1,7 +1,6 @@
 package com.example.composeplaygrounds
 
 import android.graphics.Paint
-import android.graphics.drawable.VectorDrawable
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.LinearEasing
@@ -34,8 +33,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,13 +43,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +55,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
@@ -72,7 +66,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -80,9 +73,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.composeplaygrounds.ui.theme.RadarColor
 import com.example.composeplaygrounds.ui.theme.RadarColorGreen
-import kotlinx.coroutines.launch
 
-class ItemState(
+class GameItemState(
     offsetX: Int,
     offsetY: Int,
     val isEnemy: Boolean,
@@ -96,9 +88,9 @@ fun rememberItemState(
     offsetX: Int,
     offsetY: Int,
     isEnemy: Boolean,
-): ItemState {
+): GameItemState {
     return remember {
-        ItemState(
+        GameItemState(
             offsetX, offsetY, isEnemy
         )
     }
@@ -108,8 +100,8 @@ fun rememberItemState(
 fun Radar() {
 
     val items = remember {
-        mutableStateListOf<ItemState>(
-            ItemState(
+        mutableStateListOf<GameItemState>(
+            GameItemState(
                 100,
                 100,
                 false
@@ -140,7 +132,7 @@ fun Radar() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FieldView(
-    items: MutableList<ItemState>,
+    items: MutableList<GameItemState>,
     onSwitchMode: () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -157,7 +149,7 @@ fun FieldView(
                         ),
                         onClick = {
                             items.add(
-                                ItemState(
+                                GameItemState(
                                     offsetX = (0..200).random(),
                                     offsetY = (0..200).random(),
                                     isEnemy = true
@@ -174,7 +166,7 @@ fun FieldView(
                         ),
                         onClick = {
                             items.add(
-                                ItemState(
+                                GameItemState(
                                     offsetX = (0..200).random(),
                                     offsetY = (0..200).random(),
                                     isEnemy = false
@@ -220,8 +212,8 @@ fun FieldView(
 
 @Composable
 fun ItemView(
-    item: ItemState,
-    onSwordClicked : () -> ItemState?
+    item: GameItemState,
+    onSwordClicked : () -> GameItemState?
 ) {
     var isDialogActive by remember {
         mutableStateOf(true)
@@ -231,7 +223,7 @@ fun ItemView(
         mutableStateOf(false)
     }
     var targetedEnemy by remember {
-        mutableStateOf<ItemState?>(null)
+        mutableStateOf<GameItemState?>(null)
     }
     val swordRotation by animateFloatAsState(
         targetValue = if (isAttacking) -360f else 0f,
@@ -348,7 +340,7 @@ fun ItemView(
 
 @Composable
 fun RadarView(
-    items: MutableList<ItemState>,
+    items: MutableList<GameItemState>,
     onSwitchMode: () -> Unit,
 ) {
     val config = LocalConfiguration.current
