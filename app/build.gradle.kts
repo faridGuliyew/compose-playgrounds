@@ -54,6 +54,7 @@ dependencies {
 
     implementation(kotlin("reflect"))
 
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.lottie.compose)
     //implementation (libs.filament.android.utils)
     //implementation(libs.google.filament.android)
